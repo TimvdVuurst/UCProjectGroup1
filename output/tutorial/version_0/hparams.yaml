@@ -1,0 +1,36 @@
+ignore: null
+model_args:
+  backbone: prithvi_vit_100
+  decoder: UperNetDecoder
+  bands:
+  - BLUE
+  - GREEN
+  - RED
+  - NIR_NARROW
+  - SWIR_1
+  - SWIR_2
+  num_classes: 4
+  necks:
+  - name: SelectIndices
+    indices:
+    - 1
+    - 2
+    - 3
+    - 4
+  - name: ReshapeTokensToImage
+  - name: LearnedInterpolateToPyramidal
+model_factory: PrithviModelFactory
+loss: ce
+aux_heads: null
+aux_loss: null
+class_weights: null
+ignore_index: null
+lr: 0.0001
+optimizer: AdamW
+optimizer_hparams:
+  weight_decay: 0.05
+scheduler: null
+scheduler_hparams: null
+freeze_backbone: true
+freeze_decoder: false
+class_names: null
