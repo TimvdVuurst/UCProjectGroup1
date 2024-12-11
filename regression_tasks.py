@@ -199,6 +199,7 @@ class RegressionTask(TerraTorchTask):  # changed from ClassificationTask
         self.val_metrics = metrics.clone(prefix="val/")
         self.test_metrics = metrics.clone(prefix="test/")
 
+    ##CHANGES MADE IN THIS FUNCTION SHOULD BE MADE ANALOGOUSLY IN validation_step AND test_step
     def training_step(self, batch: Any, batch_idx: int, dataloader_idx: int = 0) -> Tensor:
         """Compute the train loss and additional metrics.
 
@@ -208,14 +209,14 @@ class RegressionTask(TerraTorchTask):  # changed from ClassificationTask
             dataloader_idx: Index of the current dataloader.
         """
         x = batch["image"]
-        y = batch["label"]
-        other_keys = batch.keys() - {"image", "label", "filename"}
+        y = batch["label"] #CHANGE TO REGRESSION GROUND TRUTH AS PER RegressionData.py (e.g. use the key regr_label)
+        other_keys = batch.keys() - {"image", "label", "filename"} #ADD IN THE REGRESSION GROUND TRUTH
         rest = {k:batch[k] for k in other_keys}
 
         model_output: ModelOutput = self(x, **rest)
         loss = self.train_loss_handler.compute_loss(model_output, y, self.criterion, self.aux_loss)
         self.train_loss_handler.log_loss(self.log, loss_dict=loss, batch_size=x.shape[0])
-        y_hat_hard = to_class_prediction(model_output)
+        y_hat_hard = to_class_prediction(model_output) ##CHANGE TO REGRESSION PREDICTOR, SAME IN VAL AND TEST(?)
         self.train_metrics.update(y_hat_hard, y)
 
         return loss["loss"]
@@ -248,7 +249,7 @@ class RegressionTask(TerraTorchTask):  # changed from ClassificationTask
         """
         x = batch["image"]
         y = batch["label"]
-        other_keys = batch.keys() - {"image", "label", "filename"}
+        other_keys = batch.keys() - {"image", "label", "filename"} 
         rest = {k:batch[k] for k in other_keys}
         model_output: ModelOutput = self(x, **rest)
         loss = self.test_loss_handler.compute_loss(model_output, y, self.criterion, self.aux_loss)

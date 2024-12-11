@@ -6,24 +6,24 @@ import pandas as pd
 from typing import Any,Tuple,A,HLSBands,Path
 import os
 
-class ModifiedImageFolder(ImageFolder):
-    def __getitem__(self, index: int) -> Tuple[Any, Any]:
-        """
-        Args:
-            index (int): Index
+# class ModifiedImageFolder(ImageFolder):
+#     def __getitem__(self, index: int) -> Tuple[Any, Any]:
+#         """
+#         Args:
+#             index (int): Index
 
-        Returns:
-            tuple: (sample, target, regression_ground_truth) where target is class_index of the target class.
-        """
-        path, target = self.samples[index]
-        regression_ground_truth = os.path.split(path)[-1].split('.')[1].split('_')[-1] #ugly but should work
-        sample = self.loader(path)
-        if self.transform is not None:
-            sample = self.transform(sample)
-        if self.target_transform is not None:
-            target = self.target_transform(target)
+#         Returns:
+#             tuple: (sample, target, regression_ground_truth) where target is class_index of the target class.
+#         """
+#         path, target = self.samples[index]
+#         regression_ground_truth = os.path.split(path)[-1].split('.')[1].split('_')[-1] #ugly but should work
+#         sample = self.loader(path)
+#         if self.transform is not None:
+#             sample = self.transform(sample)
+#         if self.target_transform is not None:
+#             target = self.target_transform(target)
 
-        return sample, target, regression_ground_truth
+#         return sample, target, regression_ground_truth
 
 def itemgetter(index,samples,loader,transform,target_transform):
         """
