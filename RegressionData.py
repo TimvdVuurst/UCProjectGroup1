@@ -45,7 +45,7 @@ def itemgetter(index,samples,loader,transform,target_transform):
             tuple: (sample, target) where target is class_index of the target class.
         """
         path, target = samples[index]
-        regression_ground_truth = os.path.split(path)[-1].split('.')[1].split('_')[-1] #ugly but should work if we input regression truth as _.... on the end before .tif
+        regression_ground_truth = float(os.path.split(path)[-1].split('_')[-1].strip('.tif')) #ugly but should work if we input regression truth as _.... on the end before .tif
         sample = loader(path)
         if transform is not None:
             sample = transform(sample)

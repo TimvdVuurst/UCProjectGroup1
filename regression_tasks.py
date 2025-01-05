@@ -20,7 +20,9 @@ from terratorch.tasks.optimizer_factory import optimizer_factory
 
 def to_class_prediction(y: ModelOutput) -> Tensor:
     y_hat = y.output
-    return y_hat.argmax(dim=1)
+    # return y_hat.argmax(dim=1)
+    print(y_hat.shape)
+    return y_hat.reshape(y_hat.shape[0])
 
 
 class RegressionTask(BaseTask):  # changed from ClassificationTask
@@ -134,12 +136,12 @@ class RegressionTask(BaseTask):  # changed from ClassificationTask
         loss: str = self.hparams["loss"]
         ignore_index = self.hparams["ignore_index"]
 
-        class_weights = (
-                    torch.Tensor(self.hparams["class_weights"]) if self.hparams["class_weights"] is not None else None
-                )
+        # class_weights = (
+        #             torch.Tensor(self.hparams["class_weights"]) if self.hparams["class_weights"] is not None else None
+        #         )
         if loss == "mse":  # added to handle regression, for now no other loss is valid
-            ignore_value = -100 if ignore_index is None else ignore_index
-            self.criterion = nn.MSELoss  
+            # ignore_value = -100 if ignore_index is None else ignore_index
+            self.criterion = nn.MSELoss() 
         else:
             msg = f"Loss type '{loss}' is not valid."
             raise ValueError(msg)
@@ -148,8 +150,8 @@ class RegressionTask(BaseTask):  # changed from ClassificationTask
     def configure_metrics(self) -> None:
         """Initialize the performance metrics."""
         num_classes: int = self.hparams["model_args"]["num_classes"]
-        ignore_index: int = self.hparams["ignore_index"]
-        class_names = self.hparams["class_names"]
+        # ignore_index: int = self.hparams["ignore_index"]
+        # class_names = self.hparams["class_names"]
         metrics = MetricCollection(
             {            
                 "R2_Score": R2Score(
@@ -173,6 +175,8 @@ class RegressionTask(BaseTask):  # changed from ClassificationTask
         x = batch["image"]
         y = batch["regr_label"] #CHANGE TO REGRESSION GROUND TRUTH AS PER RegressionData.py (e.g. use the key regr_label)
         model_output: dict[str, Tensor] = self(x)
+        print('TRAINING step reached! ')#, model_output)
+        # print(type(y), y, y.shape)
         loss = self.train_loss_handler.compute_loss(model_output, y, self.criterion, self.aux_loss)
         self.train_loss_handler.log_loss(self.log, loss_dict=loss, batch_size=x.shape[0])
         y_hat_hard = to_class_prediction(model_output)
@@ -196,6 +200,8 @@ class RegressionTask(BaseTask):  # changed from ClassificationTask
         x = batch["image"]
         y = batch["regr_label"] #CHANGE TO REGRESSION GROUND TRUTH AS PER RegressionData.py (e.g. use the key regr_label)
         model_output: dict[str, Tensor] = self(x)
+        print('VALIDATION step reached! ')#, model_output)
+        # print(type(y), y,y.shape)
         loss = self.val_loss_handler.compute_loss(model_output, y, self.criterion, self.aux_loss)
         self.val_loss_handler.log_loss(self.log, loss_dict=loss, batch_size=x.shape[0])
         y_hat_hard = to_class_prediction(model_output)
