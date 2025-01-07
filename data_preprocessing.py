@@ -31,7 +31,7 @@ def create_split(data: pd.DataFrame) ->typing.Tuple[typing.List[str]]:
     test = np.append(test,oil_instances[2])
     return train, val, test
 
-def crop_image_and_segmentation(filepath : str, segmentation_path: str | None = None, channels: list = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]) -> tuple:  
+def crop_image_and_segmentation(filepath : str, segmentation_path: str | None = None, size : int = 120, channels: list = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]) -> tuple:  
     """_summary_
 
     Args:
@@ -47,11 +47,11 @@ def crop_image_and_segmentation(filepath : str, segmentation_path: str | None = 
                         [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]])
     # imgdata = imgdata[channels] #keep only wanted channels
     
-    size = imgdata.shape[1] #will be 300
+    shape = imgdata.shape[1] #will be 300
 
     #force square:
-    if imgdata.shape[2] != size:
-        newimgdata = np.empty((len(channels), size, size))
+    if imgdata.shape[2] != shape:
+        newimgdata = np.empty((len(channels), shape, shape))
         newimgdata[:, :, :imgdata.shape[2]] = imgdata[:, :, :imgdata.shape[2]]
         newimgdata[:, :, imgdata.shape[2]:] = imgdata[:,:, imgdata.shape[2] - 1:]
         imgdata = newimgdata
@@ -63,118 +63,26 @@ def crop_image_and_segmentation(filepath : str, segmentation_path: str | None = 
         fptdata = fptdata.reshape(fptdata.shape[1:]) #drop the first dimension which is 1 anyway
         # print(f'fptdata has shape {fptdata.shape}, should be either (120,120) or (300,300).')
 
-        if size == 300: #300 x 300 images
-            fptcropped = fptdata[int((fptdata.shape[0] - 120) / 2):int((fptdata.shape[0] + 120) / 2),
-                                    int((fptdata.shape[1] - 120) / 2):int((fptdata.shape[1] + 120) / 2)] # crop segmentation data to right size
+        if shape == 300: #300 x 300 images
+            fptcropped = fptdata[int((fptdata.shape[0] - size) / 2):int((fptdata.shape[0] + size) / 2),
+                                    int((fptdata.shape[1] - size) / 2):int((fptdata.shape[1] + size) / 2)] # crop segmentation data to right size
         
             if np.sum(fptcropped) == np.sum(fptdata): #if we effectively did not do any cropping on the segmentation mask 
                 fptdata = fptcropped
-                imgdata = imgdata[:, int((imgdata.shape[1] - 120) / 2):int((imgdata.shape[1] + 120) / 2),
-                                    int((imgdata.shape[2] - 120) / 2):int((imgdata.shape[2] + 120) / 2)] # crop image to central 120x120 pixels 
-            else: #if the fptdata was not 120x120 originally, we resize as such
-                imgdata = cv2.resize(np.transpose(imgdata, (1, 2, 0)).astype('float32'), (120, 120), #make sure the 300x300 image pixels are the first two dimensions and that bands is the last
+                imgdata = imgdata[:, int((imgdata.shape[1] - size) / 2):int((imgdata.shape[1] + size) / 2),
+                                    int((imgdata.shape[2] - size) / 2):int((imgdata.shape[2] + size) / 2)] # crop image to central 120x120 pixels 
+            else: #if spatial resolution is different
+                imgdata = cv2.resize(np.transpose(imgdata, (1, 2, 0)).astype('float32'), (size, size), #make sure the 300x300 image pixels are the first two dimensions and that bands is the last
                                         interpolation=cv2.INTER_CUBIC)
-                imgdata = np.transpose(imgdata, (2, 0, 1)) #tranpose back to bands,pixel,pixel - now (13,120,120)
-                fptdata = cv2.resize(fptdata, (120, 120), interpolation=cv2.INTER_CUBIC) #resize 
+                imgdata = np.transpose(imgdata, (2, 0, 1)) #tranpose back to bands,pixel,pixel - now (13,size,size)
+                fptdata = cv2.resize(fptdata, (size, size), interpolation=cv2.INTER_CUBIC) #resize 
 
         return imgdata, fptdata
     
     else:
-        if size == 300: #300 x 300 images
+        if shape == 300: #300 x 300 images
            imgdata = imgdata[:, int((imgdata.shape[1] - 120) / 2):int((imgdata.shape[1] + 120) / 2),
                                 int((imgdata.shape[2] - 120) / 2):int((imgdata.shape[2] + 120) / 2)] # crop image to central 120x120 pixels 
         
         return imgdata
         
-
-
-def whatthefuck(seg_path, data_path):
-    default_transform = rio.transform.from_bounds(0, 0, 120, 120, width=120, height=120)
-    seglabels = []
-    segfile_lookup = {}
-
-    for i, seglabelfile in enumerate(os.listdir(seg_path)):
-        segdata = json.load(open(os.path.join(seg_path,
-                                                seglabelfile), 'r'))
-        seglabels.append(segdata)
-        segfile_lookup[
-            "-".join(segdata['data']['image'].split('-')[1:]).replace(
-                '.png', '.tif')] = i
-
-    seglabels_poly = []
-    # read in image file names for positive images
-    idx = 0
-    for root, _, files in os.walk(data_path):
-        for filename in files:
-            if not filename.endswith('.tif'):
-                continue
-            if filename not in segfile_lookup.keys():
-                continue
-            img_file = os.path.join(root, filename)
-
-            # extracting image size
-            if "120x120" in root:
-                size = 120
-            elif "300x300" in root:
-                size =300
-            else: 
-                print("Outlier size image")
-
-            polygons = []
-            for completions in seglabels[segfile_lookup[filename]]['completions']:
-                for result in completions['result']:
-                    polygons.append(
-                        np.array(
-                            result['value']['points'] + [result['value']['points'][0]]) * size / 100)
-                    # factor necessary to scale edge coordinates
-                    # appropriately
-            # if 'positive' in root and polygons != []:
-            #     seglabels_poly.append(polygons)
-            #     idx += 1
-            # elif 'negative' in root:
-            #     seglabels_poly.append([])
-            #     idx +=1
-
-
-        # rasterize segmentation polygons
-            fptdata = np.zeros(img_file.shape[1:], dtype=np.uint8)
-            # polygons = seglabels_poly.copy()
-            shapes = []
-
-            if len(polygons) > 0:
-                for pol in polygons:
-                    try:
-                        pol = Polygon(pol)
-                        shapes.append(pol)
-                    except ValueError:
-                        continue
-                fptdata = rasterize(((g, 1) for g in shapes),
-                                    out_shape=fptdata.shape,
-                                    all_touched=True)
-
-            # convert raster to tiff 
-            mask_name = f"data/labels/{filename}.tif"
-            with rio.open(mask_name, 
-                        'w',
-                        driver='GTiff',
-                        width=size,
-                        height=size,
-                        # dtype=load_file.dtype,
-                        transform=default_transform,  # Adding wrong geotransform to avoid NotGeoreferencedWarning
-                        count=13) as dst:
-                dst.write(fptdata)  # writing
-
-                # list_polygons = [pol.tolist() for pol in polygons]
-
-        # if size == 300:
-        #     fptcropped = fptdata[int((fptdata.shape[0] - 120) / 2):int((fptdata.shape[0] + 120) / 2),
-        #                          int((fptdata.shape[1] - 120) / 2):int((fptdata.shape[1] + 120) / 2)]
-        #     if np.sum(fptcropped) == np.sum(fptdata):
-        #         fptdata = fptcropped
-        #         imgdata = imgdata[:, int((imgdata.shape[1] - 120) / 2):int((imgdata.shape[1] + 120) / 2),
-        #                           int((imgdata.shape[2] - 120) / 2):int((imgdata.shape[2] + 120) / 2)]
-        #     else:
-        #         imgdata = cv2.resize(np.transpose(imgdata, (1, 2, 0)).astype('float32'), (120, 120),
-        #                              interpolation=cv2.INTER_CUBIC)
-        #         imgdata = np.transpose(imgdata, (2, 0, 1))
-        #         fptdata = cv2.resize(fptdata, (120, 120), interpolation=cv2.INTER_CUBIC)
