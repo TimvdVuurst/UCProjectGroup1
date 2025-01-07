@@ -10,7 +10,7 @@ import torch
 from rasterio.features import rasterize
 from shapely.geometry import Polygon
 # from torchvision import transforms
-# import cv2
+import cv2
 import os
 
 # from custom_augmentations import Flip, Mirror, Rotate
@@ -31,12 +31,12 @@ def create_split(data: pd.DataFrame) ->typing.Tuple[typing.List[str]]:
     test = np.append(test,oil_instances[2])
     return train, val, test
 
-def crop_image_and_segmentation(filepath : str, segmentation_path: str, channels: list = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 13]) -> tuple:  
+def crop_image_and_segmentation(filepath : str, segmentation_path: str | None = None, channels: list = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 13]) -> tuple:  
     """_summary_
 
     Args:
         filepath (str): Path to image geoTIFF
-        segmentation_path (str): Path to segmentation geoTIFF
+        segmentation_path (str or None): Path to segmentation geoTIFF. Defaults to None in which case only the image is cropped.
         channels (list, optional): List of indices of bands aka channels to use. Defaults to [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 13].
 
     Returns:
@@ -46,12 +46,7 @@ def crop_image_and_segmentation(filepath : str, segmentation_path: str, channels
     imgdata = np.array([imgfile.read(i) for i in
                         [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 13]])
     # imgdata = imgdata[channels] #keep only wanted channels
-
-    seg_file = rio.open(segmentation_path)
-    fptdata = seg_file.read() #there is only 1 band for the segmentation masks
-    fptdata = fptdata.reshape(fptdata.shape[1:])
-    print(f'fptdata has shape {fptdata.shape}, should be either (120,120) or (300,300).')
-
+    
     size = imgdata.shape[1] #will be 300
 
     #force square:
@@ -61,21 +56,36 @@ def crop_image_and_segmentation(filepath : str, segmentation_path: str, channels
         newimgdata[:, :, imgdata.shape[2]:] = imgdata[:,:, imgdata.shape[2] - 1:]
         imgdata = newimgdata
 
-    if size == 300: #300 x 300 images
-        fptcropped = fptdata[int((fptdata.shape[0] - 120) / 2):int((fptdata.shape[0] + 120) / 2),
-                                int((fptdata.shape[1] - 120) / 2):int((fptdata.shape[1] + 120) / 2)] # crop segmentation data to right size
-       
-        if np.sum(fptcropped) == np.sum(fptdata): #if we effectively did not do any cropping on the segmentation mask 
-            fptdata = fptcropped
-            imgdata = imgdata[:, int((imgdata.shape[1] - 120) / 2):int((imgdata.shape[1] + 120) / 2),
-                                int((imgdata.shape[2] - 120) / 2):int((imgdata.shape[2] + 120) / 2)] # crop image to central 120x120 pixels 
-        else: #if the fptdata was not 120x120 originally, we resize as such
-            imgdata = cv2.resize(np.transpose(imgdata, (1, 2, 0)).astype('float32'), (120, 120), #make sure the 300x300 image pixels are the first two dimensions and that bands is the last
-                                    interpolation=cv2.INTER_CUBIC)
-            imgdata = np.transpose(imgdata, (2, 0, 1)) #tranpose back to bands,pixel,pixel - now (13,120,120)
-            fptdata = cv2.resize(fptdata, (120, 120), interpolation=cv2.INTER_CUBIC) #resize 
+    if segmentation_path is not None:
+            
+        seg_file = rio.open(segmentation_path)
+        fptdata = seg_file.read() #there is only 1 band for the segmentation masks
+        fptdata = fptdata.reshape(fptdata.shape[1:]) #drop the first dimension which is 1 anyway
+        # print(f'fptdata has shape {fptdata.shape}, should be either (120,120) or (300,300).')
 
-    return imgdata, fptdata
+        if size == 300: #300 x 300 images
+            fptcropped = fptdata[int((fptdata.shape[0] - 120) / 2):int((fptdata.shape[0] + 120) / 2),
+                                    int((fptdata.shape[1] - 120) / 2):int((fptdata.shape[1] + 120) / 2)] # crop segmentation data to right size
+        
+            if np.sum(fptcropped) == np.sum(fptdata): #if we effectively did not do any cropping on the segmentation mask 
+                fptdata = fptcropped
+                imgdata = imgdata[:, int((imgdata.shape[1] - 120) / 2):int((imgdata.shape[1] + 120) / 2),
+                                    int((imgdata.shape[2] - 120) / 2):int((imgdata.shape[2] + 120) / 2)] # crop image to central 120x120 pixels 
+            else: #if the fptdata was not 120x120 originally, we resize as such
+                imgdata = cv2.resize(np.transpose(imgdata, (1, 2, 0)).astype('float32'), (120, 120), #make sure the 300x300 image pixels are the first two dimensions and that bands is the last
+                                        interpolation=cv2.INTER_CUBIC)
+                imgdata = np.transpose(imgdata, (2, 0, 1)) #tranpose back to bands,pixel,pixel - now (13,120,120)
+                fptdata = cv2.resize(fptdata, (120, 120), interpolation=cv2.INTER_CUBIC) #resize 
+
+        return imgdata, fptdata
+    
+    else:
+        if size == 300: #300 x 300 images
+           imgdata = imgdata[:, int((imgdata.shape[1] - 120) / 2):int((imgdata.shape[1] + 120) / 2),
+                                int((imgdata.shape[2] - 120) / 2):int((imgdata.shape[2] + 120) / 2)] # crop image to central 120x120 pixels 
+        
+        return imgdata
+        
 
 
 def whatthefuck(seg_path, data_path):
