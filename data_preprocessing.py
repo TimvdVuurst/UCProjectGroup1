@@ -31,7 +31,7 @@ def create_split(data: pd.DataFrame) ->typing.Tuple[typing.List[str]]:
     test = np.append(test,oil_instances[2])
     return train, val, test
 
-def crop_image_and_segmentation(filepath : str, segmentation_path: str | None = None, channels: list = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 13]) -> tuple:  
+def crop_image_and_segmentation(filepath : str, segmentation_path: str | None = None, channels: list = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]) -> tuple:  
     """_summary_
 
     Args:
@@ -44,7 +44,7 @@ def crop_image_and_segmentation(filepath : str, segmentation_path: str | None = 
     """
     imgfile = rio.open(filepath)
     imgdata = np.array([imgfile.read(i) for i in
-                        [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 13]])
+                        [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]])
     # imgdata = imgdata[channels] #keep only wanted channels
     
     size = imgdata.shape[1] #will be 300
