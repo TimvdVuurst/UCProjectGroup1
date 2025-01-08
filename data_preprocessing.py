@@ -24,8 +24,8 @@ def create_split(data: pd.DataFrame) ->typing.Tuple[typing.List[str]]:
     data_shuffle = data_shuffle[np.invert(np.isin(data_shuffle['filename'].values,oil_instances))] #remove oil instances
     N = data_shuffle.shape[0]
 
-    train_val, test = train_test_split(data_shuffle['filename'].values, test_size=0.1, random_state=42)
-    train,val = train_test_split(train_val, test_size=0.11, random_state=42) #0.11 since it should contribute 10% of the whole dataset
+    train, val_test = train_test_split(data_shuffle['filename'].values, test_size=0.2, random_state=42)
+    val, test = train_test_split(val_test, test_size=0.5, random_state=42) #0.11 since it should contribute 10% of the whole dataset
     train = np.append(train,oil_instances[0])
     val = np.append(val,oil_instances[1])
     test = np.append(test,oil_instances[2])
@@ -75,7 +75,7 @@ def crop_image_and_segmentation(filepath : str, segmentation_path: str | None = 
                 imgdata = cv2.resize(np.transpose(imgdata, (1, 2, 0)).astype('float32'), (size, size), #make sure the 300x300 image pixels are the first two dimensions and that bands is the last
                                         interpolation=cv2.INTER_CUBIC)
                 imgdata = np.transpose(imgdata, (2, 0, 1)) #tranpose back to bands,pixel,pixel - now (13,size,size)
-                fptdata = cv2.resize(fptdata, (size, size), interpolation=cv2.INTER_CUBIC) #resize 
+                fptdata = cv2.resize(fptdata.astype('float32'), (size, size), interpolation=cv2.INTER_CUBIC) #resize 
 
         return imgdata, fptdata
     
