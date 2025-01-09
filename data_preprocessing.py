@@ -25,12 +25,16 @@ def create_split(data: pd.DataFrame) ->typing.Tuple[typing.List[str]]:
     test = np.append(test,oil_instances[2])
     return train, val, test
 
-def crop_image_and_segmentation(filepath : str, segmentation_path: str | None = None, size : int = 120, channels: list = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]) -> tuple:  
-    """_summary_
+def crop_image_and_segmentation(filepath : str, segmentation_path: str, size : int = 120, channels: list = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]) -> tuple:  
+    """Crops an image and a segmenation file (both in tif format) to a square of the specified size in the specified channels. 
+    This code is very largely based on that by Hanna et al. (2023) from their paper ``Physics-Guided Multitask Learning for Estimating
+    Power Generation and CO2 Emissions From Satellite Imagery''. Even if only a cropped image is desired, a 
+    corresponding segmentation filepath should be given. This is because the decision on whether to use cubic interpolation to resolve
+    any spatial resolution issues during cropping is based on the segmentation mask.
 
     Args:
         filepath (str): Path to image geoTIFF
-        segmentation_path (str or None): Path to segmentation geoTIFF. Defaults to None in which case only the image is cropped.
+        segmentation_path (str): Path to segmentation geoTIFF.
         channels (list, optional): List of indices of bands aka channels to use. Defaults to [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 13].
 
     Returns:
