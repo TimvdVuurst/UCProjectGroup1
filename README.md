@@ -1,2 +1,4 @@
 # UCProjectGroup1
 The codebase for the project of Group 1 of the UC course (2024-2025) at Leiden University. The project focusses on integrating the Prithvi foundation model into a pre-existing model on prediction carbon emissions from sattelite imagery of power plants.
+
+In order to run any of the code, one must first install Terratorch. Please refer to github.com/IBM/terratorch for a detailed overview. We recommend running on a conda virtual environment where the only install required is ```pip install terratorch```. This should install all necessary dependencies. Sometimes, a wrong version of albucore is installed (it should be 0.0.16). This is manually overwritten at the top of both classification_implementation.ipynb and segmentation.ipynb - the core files in this repo. Please ensure you have the right versions, since the code is very frail in that regard.

@@ -14,25 +14,6 @@ from torch.utils.data import DataLoader
 from terratorch.io.file import load_from_file_or_attribute
 from terratorch.datamodules.generic_scalar_label_data_module import wrap_in_compose_is_list, Normalize
 
-# class ModifiedImageFolder(ImageFolder):
-#     def __getitem__(self, index: int) -> Tuple[Any, Any]:
-#         """
-#         Args:
-#             index (int): Index
-
-#         Returns:
-#             tuple: (sample, target, regression_ground_truth) where target is class_index of the target class.
-#         """
-#         path, target = self.samples[index]
-#         regression_ground_truth = os.path.split(path)[-1].split('.')[1].split('_')[-1] #ugly but should work
-#         sample = self.loader(path)
-#         if self.transform is not None:
-#             sample = self.transform(sample)
-#         if self.target_transform is not None:
-#             target = self.target_transform(target)
-
-#         return sample, target, regression_ground_truth
-
 
 def itemgetter(index,samples,loader,transform,target_transform):
         """

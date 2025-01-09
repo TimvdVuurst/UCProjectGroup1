@@ -1,3 +1,6 @@
+##Source code for data pre-processing by Hanna et al. 2023.
+##All credit goes to them.
+
 import os
 import json
 import numpy as np

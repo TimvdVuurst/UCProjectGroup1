@@ -4,17 +4,11 @@ import typing
 import pandas as pd
 import numpy as np
 
-import json
 import rasterio as rio
-import torch
 from rasterio.features import rasterize
 from shapely.geometry import Polygon
-# from torchvision import transforms
 import cv2
-import os
 
-# from custom_augmentations import Flip, Mirror, Rotate
-# from torch.utils.data import Dataset
 
 def create_split(data: pd.DataFrame) ->typing.Tuple[typing.List[str]]:
     data_shuffle = shuffle(data,random_state=42)  # set random seed for reproducibility
